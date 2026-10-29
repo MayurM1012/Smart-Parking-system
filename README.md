@@ -31,7 +31,7 @@ All four sensors share 3.3V and GND.
 | Slot 3 | GPIO 19 |
 | Slot 4 | GPIO 21 |
 
-Sensor VCC goes to 3.3V and sensor GND goes to GND. Most modules output LOW when an object is detected. If yours is reversed, change `== LOW` to `== HIGH` in `main.cpp`.
+Sensor VCC goes to 3.3V and sensor GND goes to GND.
 
 ## Project structure
 
