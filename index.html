@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartPark | Parking Dashboard</title>
+  <style>
+    :root{--bg:#f4f7fb;--surface:#fff;--text:#172033;--muted:#68758a;--line:#e4eaf2;--green:#16845b;--green-bg:#e7f7ef;--red:#c43d4b;--red-bg:#fff0f1;--blue:#315be8;--blue-bg:#edf1ff;--amber:#79531b;--amber-bg:#fff3d6;--shadow:0 12px 32px rgba(28,43,73,.07)}
+    *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+    .topbar{background:#111b32;color:#fff;padding:22px clamp(18px,4vw,54px);display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:13px}.brand-icon{width:45px;height:45px;border-radius:14px;display:grid;place-items:center;background:#315be8;font-size:24px}
+    h1{margin:0;font-size:clamp(21px,3vw,28px);letter-spacing:-.5px}.subtitle{color:#b9c5dc;margin-top:4px;font-size:13px}
+    .connection{display:flex;align-items:center;gap:8px;border:1px solid #35415b;background:#1b2742;border-radius:999px;padding:9px 13px;font-size:12px;color:#d9e2f3}
+    .dot{width:8px;height:8px;border-radius:50%;background:#f5b942}.dot.online{background:#42d69b;box-shadow:0 0 0 4px rgba(66,214,155,.12)}.dot.offline{background:#ff6675}
+    main{max-width:1280px;margin:0 auto;padding:28px clamp(16px,3vw,34px) 44px}.section-heading{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:17px}
+    h2{font-size:19px;margin:0}.muted{color:var(--muted);font-size:13px}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin-bottom:29px}
+    .stat,.slot-card,.panel{background:var(--surface);border:1px solid var(--line);border-radius:17px;box-shadow:var(--shadow)}.stat{padding:19px 20px}
+    .stat-top{display:flex;align-items:center;justify-content:space-between;gap:10px}.stat-label{color:var(--muted);font-size:13px;font-weight:600}
+    .stat-value{font-size:29px;font-weight:750;margin-top:12px;letter-spacing:-.8px}.stat-note{font-size:12px;color:var(--muted);margin-top:4px}
+    .stat-icon{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:var(--blue-bg);color:var(--blue);font-size:18px}
+    .slot-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.slot-card{padding:19px;position:relative;overflow:hidden}
+    .slot-card::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:#b9c4d5}.slot-card.free::before{background:var(--green)}.slot-card.occupied::before{background:var(--red)}.slot-card.due::before{background:#e0a21b}
+    .slot-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.slot-name{font-size:17px;font-weight:750}
+    .badge{font-size:11px;font-weight:750;padding:6px 9px;border-radius:999px;letter-spacing:.25px}.badge.free{color:var(--green);background:var(--green-bg)}.badge.occupied{color:var(--red);background:var(--red-bg)}.badge.due{color:var(--amber);background:var(--amber-bg)}.badge.unknown{color:#6b7587;background:#eef1f5}
+    .car-area{margin:19px 0 15px;border:1px dashed #d9e1ec;border-radius:12px;height:100px;display:grid;place-items:center;background:#fafbfd}.car-area .car{font-size:38px;filter:grayscale(1);opacity:.23}
+    .slot-card.occupied .car-area{background:#fff8f8;border-color:#f4d3d7}.slot-card.occupied .car{filter:none;opacity:1}
+    .slot-card.due .car-area{background:#fffaf0;border-color:#f3e0b1}.slot-card.due .car{filter:none;opacity:.6}
+    .slot-detail{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #f0f2f6;font-size:12px}.slot-detail:last-child{border-bottom:0}
+    .slot-detail span:first-child{color:var(--muted)}.slot-detail strong{text-align:right;font-weight:650}.live-charge{color:var(--blue);font-size:17px;font-weight:800}.due-charge{color:var(--amber);font-size:17px;font-weight:800}
+    .lower-grid{display:grid;grid-template-columns:1.35fr .65fr;gap:16px;margin-top:28px}.panel{padding:21px;min-width:0}
+    .panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.panel h2{font-size:17px}
+    .rate-chip{color:var(--blue);background:var(--blue-bg);padding:7px 10px;border-radius:9px;font-size:12px;font-weight:750;white-space:nowrap}
+    .bill-list{display:flex;flex-direction:column;margin-top:6px}.bill-item{border-bottom:1px solid #f0f2f6}.bill-item:last-child{border-bottom:0}
+    .bill-row{display:flex;align-items:center;gap:12px;padding:13px 0}.bill-main{flex:1;min-width:0}
+    .bill-title{font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.bill-sub{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4}
+    .bill-amount{font-size:18px;font-weight:800;white-space:nowrap}.bill-amount.live{color:var(--blue)}.bill-amount.due{color:var(--amber)}.bill-amount.none{color:#a5afbf;font-weight:600}
+    .pill{font-size:10.5px;font-weight:750;padding:3px 8px;border-radius:999px}.pill.red{color:var(--red);background:var(--red-bg)}.pill.amber{color:var(--amber);background:var(--amber-bg)}.pill.grey{color:#6b7587;background:#eef1f5}
+    .done-btn{border:0;background:var(--green);color:#fff;font-weight:700;font-size:13px;padding:9px 16px;border-radius:10px;cursor:pointer;font-family:inherit}.done-btn:hover{background:#12704d}.done-btn:disabled{opacity:.6;cursor:default}
+    .bill-total{display:flex;justify-content:space-between;align-items:center;border-top:2px solid var(--line);margin-top:6px;padding-top:14px;font-size:14px;font-weight:600}.bill-total strong{font-size:22px;font-weight:800;letter-spacing:-.5px}
+    .notice{margin-top:16px;background:#fff8e8;color:var(--amber);border:1px solid #f5e3b5;border-radius:12px;padding:12px 14px;font-size:12px;line-height:1.5}
+    .pay-panel{display:flex;flex-direction:column}.qr-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center}
+    .qr-box{width:100%;max-width:210px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px}.qr-box svg{display:block;width:100%;height:auto}
+    .qr-note{font-size:12px;color:var(--amber);background:#fff8e8;border:1px solid #f5e3b5;border-radius:10px;padding:12px;line-height:1.5}
+    .upi-text{font-size:13px;font-weight:650;word-break:break-all}
+    .error{display:none;margin:0 0 18px;padding:12px 14px;border-radius:10px;background:var(--red-bg);color:#a52c39;font-size:13px;line-height:1.5}
+    .toast{display:none;position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#111b32;color:#fff;padding:11px 16px;border-radius:10px;font-size:13px;max-width:90vw;box-shadow:var(--shadow);z-index:10}
+    footer{text-align:center;color:var(--muted);font-size:12px;padding:0 16px 25px}
+    @media(max-width:950px){.slot-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.lower-grid{grid-template-columns:1fr}}
+    @media(max-width:700px){.stats{grid-template-columns:1fr}}
+    @media(max-width:520px){.slot-grid{grid-template-columns:1fr}.stat{padding:16px}.slot-card{padding:17px}.topbar{align-items:flex-start}.bill-row{flex-wrap:wrap}}
+  </style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><div class="brand-icon">🅿</div><div><h1>SmartPark</h1><div class="subtitle">Live parking availability &amp; billing dashboard</div></div></div>
+  <div class="connection"><span id="connectionDot" class="dot"></span><span id="connectionText">Connecting securely to Firebase…</span></div>
+</header>
+<main>
+  <div id="errorBox" class="error"></div>
+  <div class="section-heading"><div><h2>Parking overview</h2><div class="muted" style="margin-top:5px">Availability updates automatically from your ESP32</div></div><div class="muted">Last updated: <strong id="lastUpdated">—</strong></div></div>
+  <section class="stats">
+    <article class="stat"><div class="stat-top"><span class="stat-label">Total slots</span><span class="stat-icon">▦</span></div><div class="stat-value" id="totalSlots">4</div><div class="stat-note">Parking capacity</div></article>
+    <article class="stat"><div class="stat-top"><span class="stat-label">Available</span><span class="stat-icon" style="background:var(--green-bg);color:var(--green)">✓</span></div><div class="stat-value" id="availableSlots">—</div><div class="stat-note">Ready for parking</div></article>
+    <article class="stat"><div class="stat-top"><span class="stat-label">Occupied</span><span class="stat-icon" style="background:var(--red-bg);color:var(--red)">▣</span></div><div class="stat-value" id="occupiedSlots">—</div><div class="stat-note">Currently in use</div></article>
+  </section>
+  <div class="section-heading"><div><h2>Live slot status</h2><div class="muted" style="margin-top:5px">Green = free · Red = occupied · Amber = bill waiting to be settled</div></div><div class="muted">Live charge is an estimate until the vehicle exits</div></div>
+  <section class="slot-grid" id="slotGrid"></section>
+  <section class="lower-grid">
+    <article class="panel">
+      <div class="panel-head"><h2>Billing summary</h2><span class="rate-chip" id="rateChip">₹1 / minute</span></div>
+      <div class="muted">One bill per slot. When a car leaves, its final bill stays here until you press Done, which resets it.</div>
+      <div class="bill-list" id="billList"></div>
+      <div class="bill-total"><span>Outstanding so far</span><strong id="totalOutstanding">₹0.00</strong></div>
+      <div class="notice"><strong>Billing:</strong> ₹1 for every started minute. For example, 1 to 60 seconds = ₹1; 61 to 120 seconds = ₹2.</div>
+    </article>
+    <article class="panel pay-panel">
+      <div class="panel-head"><h2>Scan to pay</h2><span class="rate-chip">UPI</span></div>
+      <div class="qr-wrap">
+        <div class="qr-box" id="qrBox"></div>
+        <div class="upi-text" id="upiText"></div>
+        <div class="muted">Scan with any UPI app and enter the amount shown for your slot.</div>
+      </div>
+    </article>
+  </section>
+</main>
+<footer>SmartPark · ESP32 + IR sensors + Firebase Realtime Database</footer>
+<div class="toast" id="toast"></div>
+
+<!-- QR code generator -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<!-- Firebase compat SDK: sign-in is automatic and anonymous; no login page is shown. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDH0vnwzRmnZjlpAK9uH3oUBicjFraYSw8",
+    authDomain: "smart-parking-system-ed56f.firebaseapp.com",
+    databaseURL: "https://smart-parking-system-ed56f-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "smart-parking-system-ed56f",
+    appId: "1:1061142394382:web:0a12afb6dcc96dbe996e5f"
+  };
+
+  // ---------- Settings you can change ----------
+  const SLOT_IDS = ["slot1", "slot2", "slot3", "slot4"];
+  const RATE_PER_MINUTE = 1.00;          // must match RATE_PER_MINUTE in the ESP32 code
+  const UPI_ID = "yourname@upi";         // <-- put your real UPI ID here (e.g. mayur@okaxis)
+  const PAYEE_NAME = "SmartPark";
+
+  // ---------- State ----------
+  let latestData = {};
+  let dashboardReady = false;
+  let serverOffset = 0;                  // corrects for a wrong clock on the viewer's device
+  let localDone = {};                    // fallback if Firebase refuses the Done write
+  try { localDone = JSON.parse(localStorage.getItem("smartparkDone") || "{}"); } catch (e) {}
+  const saveLocalDone = () => { try { localStorage.setItem("smartparkDone", JSON.stringify(localDone)); } catch (e) {} };
+
+  // ---------- Helpers ----------
+  const money = value => "₹" + Number(value || 0).toLocaleString("en-IN", {minimumFractionDigits:2,maximumFractionDigits:2});
+  const safe = value => String(value ?? "—").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+  const durationText = seconds => {
+    seconds = Math.max(0, Math.floor(seconds || 0));
+    const h = Math.floor(seconds / 3600), m = Math.floor((seconds % 3600) / 60), s = seconds % 60;
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  };
+  const chargeForSeconds = seconds => seconds <= 0 ? 0 : Math.ceil(seconds / 60) * RATE_PER_MINUTE;
+  const parseTime = raw => {
+    raw = String(raw || "");
+    if (!raw) return 0;
+    const parsed = Date.parse(raw.replace(" ", "T") + (raw.includes("T") ? "" : "+05:30"));
+    return Number.isFinite(parsed) ? Math.floor(parsed / 1000) : 0;
+  };
+  const parseEpoch = slot => {
+    const raw = Number(slot?.entryEpoch || 0);
+    return raw > 0 ? raw : parseTime(slot?.entryTime);
+  };
+  const fmtDate = value => {
+    if (!value) return "—";
+    const secs = typeof value === "number" ? value : parseTime(value);
+    return secs ? new Date(secs * 1000).toLocaleString("en-IN", {day:"numeric",month:"short",hour:"numeric",minute:"2-digit",second:"2-digit"}) : String(value);
+  };
+  // Only touches the page when the HTML actually changed, so buttons aren't replaced mid-click.
+  const setHTML = (el, html) => { if (el && el._html !== html) { el.innerHTML = html; el._html = html; } };
+  function setConnection(ok, text) {
+    document.getElementById("connectionDot").className = "dot " + (ok ? "online" : "offline");
+    document.getElementById("connectionText").textContent = text;
+  }
+  function showError(message) {
+    const box = document.getElementById("errorBox");
+    box.style.display = "block";
+    box.textContent = message;
+  }
+  let toastTimer;
+  function showToast(message) {
+    const t = document.getElementById("toast");
+    t.textContent = message;
+    t.style.display = "block";
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.style.display = "none"; }, 7000);
+  }
+
+  // ---------- Bill state for one slot ----------
+  // running = car parked now, due = car left and the bill is not marked Done yet, none = nothing to show
+  function getBill(id, slot, status, now) {
+    if (status === "occupied") {
+      const entry = parseEpoch(slot);
+      if (!entry) return { type: "running", entry: 0, elapsed: 0, amount: 0 };
+      const elapsed = Math.max(0, now - entry);
+      return { type: "running", entry, elapsed, amount: chargeForSeconds(elapsed) };
+    }
+    const key = slot.lastExitTime || "";
+    if (key && localDone[id] !== key) {
+      return { type: "due", amount: Number(slot.lastCharge || 0), duration: slot.lastDuration || "—", entry: slot.lastEntryTime || "", exit: key };
+    }
+    return { type: "none", amount: 0 };
+  }
+
+  function slotCard(index, status, bill) {
+    const isOccupied = status === "occupied", isFree = status === "free", isDue = bill.type === "due";
+    const badgeLabel = isOccupied ? "OCCUPIED" : isDue ? "BILL DUE" : isFree ? "AVAILABLE" : "NO DATA";
+    const badgeClass = isOccupied ? "occupied" : isDue ? "due" : isFree ? "free" : "unknown";
+    const cardClass = isOccupied ? "occupied" : isDue ? "due" : "free";
+    let vehicle, entry = "—", durName = "Last duration", dur = "—", chargeName = "Last charge", charge = "—", chargeClass = "";
+
+    if (isOccupied) {
+      vehicle = "Vehicle detected"; durName = "Parked for"; chargeName = "Current charge"; chargeClass = "live-charge";
+      if (bill.entry) { entry = fmtDate(bill.entry); dur = durationText(bill.elapsed); charge = money(bill.amount); }
+      else { dur = "Entry time unavailable"; }
+    } else if (isDue) {
+      vehicle = "Bill pending"; durName = "Stayed"; chargeName = "Final charge"; chargeClass = "due-charge";
+      entry = bill.entry ? fmtDate(bill.entry) : "—"; dur = bill.duration; charge = money(bill.amount);
+    } else {
+      vehicle = isFree ? "Space available" : "Waiting for data";
+    }
+
+    return `<article class="slot-card ${cardClass}">
+      <div class="slot-head"><div class="slot-name">Parking Slot ${index + 1}</div><span class="badge ${badgeClass}">${badgeLabel}</span></div>
+      <div class="car-area"><span class="car">${isOccupied || isDue ? "🚗" : "🅿️"}</span></div>
+      <div class="slot-detail"><span>Vehicle status</span><strong>${vehicle}</strong></div>
+      <div class="slot-detail"><span>Entry time</span><strong>${safe(entry)}</strong></div>
+      ${isDue ? `<div class="slot-detail"><span>Exit time</span><strong>${safe(fmtDate(bill.exit))}</strong></div>` : ""}
+      <div class="slot-detail"><span>${durName}</span><strong>${safe(dur)}</strong></div>
+      <div class="slot-detail"><span>${chargeName}</span><strong class="${chargeClass}">${safe(charge)}</strong></div>
+    </article>`;
+  }
+
+  function billRow(id, index, bill) {
+    const name = `Slot ${index + 1}`;
+    if (bill.type === "running") {
+      const sub = bill.entry ? `${durationText(bill.elapsed)} so far · since ${fmtDate(bill.entry)}` : "Entry time unavailable";
+      return `<div class="bill-row"><div class="bill-main"><div class="bill-title">${name} <span class="pill red">Parked</span></div><div class="bill-sub">${safe(sub)}</div></div><div class="bill-amount live">${bill.entry ? money(bill.amount) : "—"}</div></div>`;
+    }
+    if (bill.type === "due") {
+      const range = bill.entry ? `arrived ${fmtDate(bill.entry)} · left ${fmtDate(bill.exit)}` : `left ${fmtDate(bill.exit)}`;
+      return `<div class="bill-row"><div class="bill-main"><div class="bill-title">${name} <span class="pill amber">Bill due</span></div><div class="bill-sub">${safe(bill.duration)} · ${safe(range)}</div></div><div class="bill-amount due">${money(bill.amount)}</div><button class="done-btn" data-slot="${id}">Done</button></div>`;
+    }
+    return `<div class="bill-row"><div class="bill-main"><div class="bill-title">${name} <span class="pill grey">Idle</span></div><div class="bill-sub">No active bill</div></div><div class="bill-amount none">—</div></div>`;
+  }
+
+  // ---------- Render everything ----------
+  function renderAll() {
+    const data = latestData || {};
+    const now = Math.floor((Date.now() + serverOffset) / 1000);
+    let free = 0, occupied = 0, outstanding = 0;
+    const cards = [];
+
+    SLOT_IDS.forEach((id, index) => {
+      const slot = data[id] || {};
+      const status = String(slot.status || "unknown").toLowerCase();
+      const bill = getBill(id, slot, status, now);
+      if (status === "occupied") occupied++; else if (status === "free") free++;
+      if (bill.type !== "none") outstanding += bill.amount;
+      cards.push(slotCard(index, status, bill));
+      setHTML(document.getElementById("bill-" + id), billRow(id, index, bill));
+    });
+
+    setHTML(document.getElementById("slotGrid"), cards.join(""));
+    document.getElementById("totalSlots").textContent = SLOT_IDS.length;
+    document.getElementById("availableSlots").textContent = free;
+    document.getElementById("occupiedSlots").textContent = occupied;
+    document.getElementById("totalOutstanding").textContent = money(outstanding);
+  }
+
+  // ---------- Done button ----------
+  function markDone(id, btn) {
+    const key = latestData?.[id]?.lastExitTime;
+    if (!key) return;
+    btn.disabled = true;
+    btn.textContent = "Resetting…";
+    // Clears this slot's finished bill. The ESP32 writes a fresh one at the next exit.
+    firebase.database().ref().update({
+      [id + "/lastExitTime"]: null,
+      [id + "/lastEntryTime"]: null,
+      [id + "/lastDuration"]: null,
+      [id + "/lastCharge"]: null
+    }).catch(() => {
+      // Database rules refused the reset: hide the bill on this device only.
+      localDone[id] = key;
+      saveLocalDone();
+      renderAll();
+      showToast("Reset on this device only. Update the database rules so Done resets the bill for everyone.");
+    });
+  }
+  document.getElementById("billList").addEventListener("click", e => {
+    const btn = e.target.closest(".done-btn");
+    if (btn) markDone(btn.dataset.slot, btn);
+  });
+
+  // ---------- Payment QR (UPI) ----------
+  function renderQr() {
+    const box = document.getElementById("qrBox");
+    const idText = document.getElementById("upiText");
+    if (!UPI_ID || UPI_ID.startsWith("yourname@")) {
+      box.innerHTML = '<div class="qr-note">Set your UPI ID in the <code>UPI_ID</code> value near the top of this script to show the payment QR code.</div>';
+      idText.textContent = "";
+      return;
+    }
+    if (typeof qrcode !== "function") {
+      box.innerHTML = '<div class="qr-note">The QR code library could not load. Check your internet connection and reload.</div>';
+      idText.textContent = UPI_ID;
+      return;
+    }
+    const text = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(PAYEE_NAME)}&cu=INR&tn=${encodeURIComponent("Parking payment")}`;
+    const qr = qrcode(0, "M");
+    qr.addData(text);
+    qr.make();
+    const n = qr.getModuleCount(), margin = 3, size = n + margin * 2;
+    let path = "";
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      if (qr.isDark(r, c)) path += `M${c + margin},${r + margin}h1v1h-1z`;
+    }
+    box.innerHTML = `<svg viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges" role="img" aria-label="UPI payment QR code">
+      <rect width="${size}" height="${size}" fill="#fff"/><path d="${path}" fill="#111"/></svg>`;
+    idText.textContent = UPI_ID;
+  }
+
+  // ---------- Firebase ----------
+  function startDashboard() {
+    if (Object.values(firebaseConfig).some(v => !v || String(v).startsWith("PASTE_"))) {
+      setConnection(false, "Firebase setup required");
+      showError("Setup needed: fill in apiKey, authDomain, databaseURL, projectId and appId in firebaseConfig (Firebase Console > Project settings > General > Your web app).");
+      return;
+    }
+    try {
+      firebase.initializeApp(firebaseConfig);
+      firebase.auth().signInAnonymously().then(() => {
+        setConnection(true, "Firebase connected · Live");
+
+        // Lets the page use Firebase's clock instead of the viewer's device clock.
+        firebase.database().ref(".info/serverTimeOffset").on("value", s => { serverOffset = s.val() || 0; });
+
+        firebase.database().ref("/").on("value", snapshot => {
+          latestData = snapshot.val() || {};
+          dashboardReady = true;
+          renderAll();
+          document.getElementById("lastUpdated").textContent = new Date().toLocaleTimeString("en-IN");
+          setConnection(true, "Firebase connected · Live");
+          document.getElementById("errorBox").style.display = "none";
+        }, error => {
+          setConnection(false, "Database permission error");
+          showError("Firebase database read failed: " + error.message + " Check Realtime Database rules and Anonymous sign-in settings.");
+        });
+      }).catch(error => {
+        setConnection(false, "Authentication failed");
+        showError("Firebase anonymous authentication failed: " + error.message + " In Firebase Console > Authentication > Sign-in method, enable Anonymous.");
+      });
+    } catch (error) {
+      setConnection(false, "Firebase configuration error");
+      showError("Firebase initialization failed: " + error.message);
+    }
+  }
+
+  // ---------- Start ----------
+  document.getElementById("rateChip").textContent = money(RATE_PER_MINUTE) + " / minute";
+  // One fixed container per slot, so a Done button is never replaced while it is being clicked.
+  document.getElementById("billList").innerHTML = SLOT_IDS.map(id => `<div class="bill-item" id="bill-${id}"></div>`).join("");
+  renderAll();
+  renderQr();
+  startDashboard();
+  // Keeps live durations and charges ticking between database updates.
+  setInterval(() => { if (dashboardReady) renderAll(); }, 1000);
+</script>
+</body>
+</html> 
